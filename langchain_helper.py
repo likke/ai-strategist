@@ -15,7 +15,7 @@ os.environ['OPENAI_API_KEY'] = openapi_key
 
 class ArticleGenerator:
     def __init__(self, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
-        self.llm = OpenAI(temperature=0.8, max_tokens=822)
+        self.llm = OpenAI(temperature=0.8, max_tokens=822, model="gpt-4")
         self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description
