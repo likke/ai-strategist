@@ -4,6 +4,7 @@ from langchain.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chains import SequentialChain
+from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 import os
 
@@ -15,7 +16,7 @@ os.environ['OPENAI_API_KEY'] = openapi_key
 
 class ArticleGenerator:
     def __init__(self, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
-        self.llm = OpenAI(temperature=0.8, max_tokens=822, model="gpt-4")
+        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name="gpt-4")
         self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description

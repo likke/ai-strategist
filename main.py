@@ -49,7 +49,7 @@ if 'outputs' not in st.session_state:
 
 brand = st.text_input('Brand:', '')
 brand_description = st.text_input('Brand Description:', '')
-content_type_options = ['', 'Blog Post', 'Email Newsletter', 'E-book', 'Infographics', 'Press Release', 'Product Description', 'Social Media Captions', 'SEO-Optimized Articles', 'Social Media Post', 'Video Script']
+content_type_options = ['', 'Article', 'Blog Post', 'Email Newsletter', 'Infographics', 'Short Story', 'Press Release', 'Product Description', 'Product Review', 'Social Media Captions', 'Advertisement', 'SEO-Optimized Articles', 'Social Media Post']
 content_type = st.selectbox('Content Type:', sorted(content_type_options))
 topic = st.text_input('Topic:', '')
 writing_style = st.text_input('Writing Style:', '')
