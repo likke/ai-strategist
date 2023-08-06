@@ -5,6 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.chains import SequentialChain
 from langchain.chat_models import ChatOpenAI
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler  
 from dotenv import load_dotenv
 import os
 
@@ -16,7 +17,7 @@ os.environ['OPENAI_API_KEY'] = openapi_key
 
 class ArticleGenerator:
     def __init__(self, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
-        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name="gpt-4")
+        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name="gpt-4", streaming=True)
         self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description
@@ -44,12 +45,12 @@ class ArticleGenerator:
 
         prompt_template_3 = PromptTemplate(
             input_variables=['first_draft', 'content_type', 'brand', 'topic'],
-            template="First Draft: {first_draft}\n\nMake a short and concise analysis of this first draft of a/an {content_type} for {brand}. Note that the topic of the {content_type} is {topic}. Follow this format for the analysis (append bullet points): \n 'DRAFT SUMMARY:' \n 'CRITICISM AND SUGGESTIONS:' \n 'PLAN:' \nOutput:"
+            template="First Draft: {first_draft}\n\nMake a short and concise analysis of this first draft of a/an {content_type} for {brand}. Note that the topic of the {content_type} is {topic}. Follow this format for the analysis (append bullet points): \n 'DRAFT SUMMARY:' \n 'CRITICISM AND SUGGESTIONS ON HOW TO MAKE THE CONTENT MORE HUMANLIKE:' \n 'PLAN:' \nOutput:"
         )
 
         prompt_template_4 = PromptTemplate(
             input_variables=['AI_analysis_2', 'content_type', 'brand', 'first_draft'],
-            template="First Draft of {brand}'s {content_type}: {first_draft} \n Suggestions on how to improve the {content_type}: {AI_analysis_2}\n\n Write the improved draft:"
+            template="First Draft of {brand}'s {content_type}: {first_draft} \n Suggestions on how to improve the {content_type}: {AI_analysis_2}\n\n Write the improved, humanlike draft:"
         )
 
         prompt_template_5 = PromptTemplate(
@@ -68,7 +69,9 @@ class ArticleGenerator:
             output_variables=['AI_analysis', 'first_draft', 'AI_analysis_2', 'final_output']
         )
 
-    def generate(self):
+    def generate(self, st_callback):  # Add the callback handler as a parameter
+        self.llm.callbacks = [st_callback]  # Set the callback handler
+
         input_data = {
             'content_type': self.content_type,
             'brand': self.brand,
@@ -83,7 +86,9 @@ class ArticleGenerator:
         self.previous_response = response  # Save the output to the state
         return response
 
-    def generate_with_feedback(self, user_feedback):
+
+    def generate_with_feedback(self, user_feedback, st_callback):  # Add the callback handler as a parameter
+        self.llm.callbacks = [st_callback]  # Set the callback handler
         input_data = {
             'content_type': self.content_type,
             'brand': self.brand,
