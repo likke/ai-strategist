@@ -38,6 +38,21 @@ custom_css = f"""
 st.markdown(custom_css, unsafe_allow_html=True)
 
 st.title("Dasho Draft Generator")
+st.text("")
+expander = st.expander('How Does This Work?', expanded=False)
+with expander:
+    st.write("""
+    This application uses a sophisticated AI model to generate written content based on your inputs. 
+
+    Here are the steps:
+
+    1. Fill in the text fields with the appropriate information about your brand, target audience, content type, topic, and writing style.
+    2. Click on the 'Generate Draft' button. The application will start generating the written content. It might take a moment, so please be patient.
+    3. The application will first show you an AI analysis of your inputs, followed by a first draft of the content. 
+    4. The application will then perform a second analysis on the first draft and present a second (final) draft.
+    5. If you have any feedback or if you want the AI to make revisions, you can provide your feedback in the 'Feedback' text field and click on 'Send Feedback'. The application will then generate a new version of the content based on your feedback.
+    6. All of your feedback and corresponding output from the AI will be displayed in the 'Feedback Thread'.
+    """)
 st.markdown("---")
 
 # Initialize state variables
@@ -47,6 +62,9 @@ if 'feedbacks' not in st.session_state:
     st.session_state['feedbacks'] = []
 if 'outputs' not in st.session_state:
     st.session_state['outputs'] = []
+if 'output_generated' not in st.session_state:
+    st.session_state['output_generated'] = False
+
 
 brand = st.text_input('Brand:', '')
 brand_description = st.text_input('Brand Description:', '')
@@ -63,10 +81,11 @@ if brand and brand_description and content_type and topic and writing_style and 
     if not st.session_state['article_gen']:
         # Initialize the ArticleGenerator object
         st.session_state['article_gen'] = ArticleGenerator(content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions)
-    with st.empty():  # Use empty to be able to continually update the output
-        st_callback = StreamlitCallbackHandler(st.container())  # Initialize the Streamlit callback handler
-        response = st.session_state['article_gen'].generate(st_callback)  # Pass the callback handler to the generate method
-
+    container = st.empty()  # Use empty to be able to continually update the output
+    st_callback = StreamlitCallbackHandler(container)  # Initialize the Streamlit callback handler
+    response = st.session_state['article_gen'].generate(st_callback)  # Pass the callback handler to the generate method
+    st.session_state['output_generated'] = True
+    container.write("")  # Clears the container after use
     st.header("FINAL OUTPUT")
 
     # Display AI Analysis
@@ -87,23 +106,23 @@ if brand and brand_description and content_type and topic and writing_style and 
     st.subheader("Second Draft")
     st.write(response['final_output'].strip())
     st.markdown("---")
+if st.session_state['output_generated']:
+    if 'user_feedback' not in st.session_state:
+        st.session_state['user_feedback'] = ''
 
-if 'user_feedback' not in st.session_state:
-    st.session_state['user_feedback'] = ''
+    user_feedback = st.text_input('Feedback:', value=st.session_state['user_feedback'])
 
-user_feedback = st.text_input('Feedback:', value=st.session_state['user_feedback'])
+    if st.session_state['output_generated'] and st.button('Send Feedback') and user_feedback:
+        # Initialize the Streamlit callback handler and generate the output
+        st_callback = StreamlitCallbackHandler(st.empty())  # Initialize the Streamlit callback handler
+        new_response = st.session_state['article_gen'].generate_with_feedback(user_feedback, st_callback)  # Pass the callback handler to the generate_with_feedback method
 
-if st.button('FEEDBACK SYSTEM IS BROKEN, PLEASE IGNORE') and user_feedback:
-    # Initialize the Streamlit callback handler and generate the output
-    st_callback = StreamlitCallbackHandler(st.empty())  # Initialize the Streamlit callback handler
-    new_response = st.session_state['article_gen'].generate_with_feedback(user_feedback, st_callback)  # Pass the callback handler to the generate_with_feedback method
+        # Update session state with the new feedback and output
+        st.session_state['feedbacks'].append(user_feedback)
+        st.session_state['outputs'].append(new_response['final_output_with_feedback'].strip())
 
-    # Update session state with the new feedback and output
-    st.session_state['feedbacks'].append(user_feedback)
-    st.session_state['outputs'].append(new_response['final_output_with_feedback'].strip())
-
-    # Clear the feedback input field
-    st.session_state['user_feedback'] = ''
+        # Clear the feedback input field
+        st.session_state['user_feedback'] = ''
 
 # Feedback thread rendering should be done outside st.empty() context
 if st.session_state['feedbacks']:
