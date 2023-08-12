@@ -16,8 +16,8 @@ openapi_key = os.getenv("OPENAPI_KEY")
 os.environ['OPENAI_API_KEY'] = openapi_key
 
 class ArticleGenerator:
-    def __init__(self, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
-        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name="gpt-4", streaming=True)
+    def __init__(self, model_name, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
+        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name=model_name, streaming=True)
         self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description
@@ -35,17 +35,17 @@ class ArticleGenerator:
     def setup(self):
         prompt_template_1 = PromptTemplate(
             input_variables=['content_type', 'brand', 'brand_description', 'topic', 'target_audience','writing_style', 'additional_instructions'],
-            template="Instructions: Create a {content_type} for {brand} in the {writing_style} writing style. Description of {brand}: {brand_description}. Target Audience: {target_audience} \n Topic of the {content_type}: {topic}\nAdditional Instructions: {additional_instructions}\nBased on the instructions, I want you to rewrite and summarize it based on how you understood them. Format your analysis like this: \n '- WHAT I UNDERSTOOD' \n '- REASONING' \n '- PLAN' \n After the analysis, reiterate the instructions to yourself. Write your answer in a conversational and instructional way as if you are reiterating the instructions to someone else. YOUR INSTRUCTIONS MUST BE ORGANIZED WITH BULLET POINTS. There must be seven items in your instructions. Separate each instructional item with '|' as a delimiter. THEN, after your analysis, write the requirements for creating a {content_type} for {topic}. \n A guide question you should answer is this: What is the structure of creating the {content_type}? Does it need chapters?\nOutput:"
+            template="Instructions: Create a {content_type} for {brand} in the {writing_style} writing style.\nDescription of {brand}: {brand_description}.\nTarget Audience: {target_audience}\nTopic of the {content_type}: {topic}\n Additional Instructions: {additional_instructions}\nBased on the instructions, I want you to rewrite and summarize it based on how you understood them. Format your analysis like this: \n '- WHAT I UNDERSTOOD' \n '- REASONING' \n '- PLAN' \n After the analysis, reiterate the instructions to yourself. Write your answer in a conversational and instructional way as if you are reiterating the instructions to someone else. YOUR INSTRUCTIONS MUST BE ORGANIZED WITH BULLET POINTS. There must be seven items in your instructions. Separate each instructional item with '|' as a delimiter. THEN, after your analysis, write the requirements for creating a {content_type} for {topic}. \n A guide question you should answer is this: What is the structure of creating the {content_type}? Does it need chapters?\nOutput:"
         )
 
         prompt_template_2 = PromptTemplate(
             input_variables=['AI_analysis', 'content_type', 'brand', 'target_audience'],
-            template="Instructions: {AI_analysis}\n\nBased on the instructions, create a {content_type} for {brand}. Target Audience: {target_audience}\nOutput:"
+            template="Instructions: {AI_analysis}\nBased on the instructions, create a {content_type} for {brand}. Target Audience: {target_audience}\nOutput:"
         )
 
         prompt_template_3 = PromptTemplate(
             input_variables=['first_draft', 'content_type', 'brand', 'topic'],
-            template="First Draft: {first_draft}\n\nMake a short and concise analysis of this first draft of a/an {content_type} for {brand}. Note that the topic of the {content_type} is {topic}. Follow this format for the analysis (append bullet points): \n 'DRAFT SUMMARY:' \n 'CRITICISM AND SUGGESTIONS ON HOW TO MAKE THE CONTENT MORE HUMANLIKE:' \n 'PLAN:' \nOutput:"
+            template="First Draft: {first_draft}\nMake a short and concise analysis of this first draft of a/an {content_type} for {brand}. Note that the topic of the {content_type} is {topic}. Follow this format for the analysis (append bullet points): \n 'DRAFT SUMMARY:' \n 'CRITICISM AND SUGGESTIONS ON HOW TO MAKE THE CONTENT MORE HUMANLIKE:' \n 'PLAN:' \nOutput:"
         )
 
         prompt_template_4 = PromptTemplate(
@@ -55,7 +55,7 @@ class ArticleGenerator:
 
         prompt_template_5 = PromptTemplate(
             input_variables=['content_type', 'brand', 'user_feedback', 'final_output'],
-            template="Latest draft of {brand}'s {content_type}: {final_output}\nThis draft of had the following user feedback: {user_feedback} \n Output based on user feedback:"
+            template="Latest draft you made of {brand}'s {content_type}: {final_output}\nThis draft of had the following user feedback: {user_feedback}\nYour response to the feedback:"
         )
         chain_1 = LLMChain(llm=self.llm, prompt=prompt_template_1, output_key="AI_analysis")
         chain_2 = LLMChain(llm=self.llm, prompt=prompt_template_2, output_key="first_draft")
