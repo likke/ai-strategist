@@ -6,65 +6,110 @@ from langchain.callbacks import StreamlitCallbackHandler
 st.set_page_config(page_title='Dasho Article Generation', page_icon=':pencil:', layout='centered', initial_sidebar_state='collapsed')
 
 # Define custom colors for layout
-primaryColor = "#ffae00"
-backgroundColor = "#F0F2F6"
-secondaryBackgroundColor = "#F6336699"
-textColor = "#000000"
-font = "sans-serif"
+primaryColor = "#4E89AE"
+startGradientColor = "#ffaa00"
+endGradientColor = "#FFFFFF"
+textColor = "#2E5266"
+font = "Roboto, sans-serif"
+secondaryBackgroundColor = "#fcdede"
+buttonColor = "#ffaa00"
 
-# Define custom css
 custom_css = f"""
 <style>
     body {{
-        background-color: {backgroundColor};
+        background: linear-gradient(90deg, {startGradientColor}, {endGradientColor});
         color: {textColor};
         font-family: {font};
+        line-height: 1.6;
     }}
     .stButton > button {{
-        background-color: {primaryColor};
-        color: {backgroundColor};
+        background-color: {buttonColor};
+        color: {endGradientColor};
         font-family: {font};
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }}
+    .stTextInput > div > div > input, 
+    textarea {{
+        color: {textColor};
+        border-radius: 10px;
+        border: 2px solid {secondaryBackgroundColor}; /* Changed to gradient start color */
+        padding: 10px 15px;
     }}
     .css-2trqyj {{
-        background-color: {secondaryBackgroundColor};
+        background-color: rgba(255, 170, 0, 0.1); /* Light version of gradient start color for readability */
         color: {textColor};
         font-family: {font};
-    }}
-    .stTextInput > div > div > input {{
-        color: {textColor};
+        border-radius: 10px;
+        padding: 10px;
+        margin-top: 10px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     }}
     .newest_message {{
-    background-color: rgba(255, 235, 205, 0.5);
-    padding: 15px;
-    border-radius: 25px;
-}}
+        background-color: rgba(78, 137, 174, 0.2);
+        padding: 15px;
+        border-radius: 15px;
+    }}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
 st.title("Dasho Draft Generator")
 st.text("")
-expander = st.expander('How Does This Work?', expanded=False)
-with expander:
-    st.write("""
-    This application uses a sophisticated AI model to generate written content based on your inputs. 
 
-    Here are the steps:
+expander_info = st.expander('How Does This Work?', expanded=False)
+with expander_info:
+    st.write("### **How the Dasho Draft Generator Works**")
+    
+    st.write("The Dasho Draft Generator is a powerful tool that harnesses the capabilities of AI to craft written content tailored to your needs. Below is an overview of how the application operates:")
 
-    1. Select a model. The default model is gpt-4. GPT-4 runs at a slow pace but is much more intelligent and creative than GPT-3.5-Turbo. GPT-3.5-Turbo runs at a much faster pace but is less intelligent and creative than GPT-4.
-    2. Fill in the text fields with the appropriate information about your brand, target audience, content type, topic, and writing style.
-    3. Click on the 'Generate Draft' button. The application will start generating the written content. It might take a moment, so please be patient.
-    4. The application will first show you an AI analysis of your inputs, followed by a first draft of the content. 
-    5. The application will then perform a second analysis on the first draft and present a second (final) draft.
-    6. If you have any feedback or if you want the AI to make revisions, you can provide your feedback in the 'Feedback' text field and click on 'Send Feedback'. The application will then generate a new version of the content based on your feedback.
-    7. All of your feedback and corresponding output from the AI will be displayed in the 'Feedback Thread'.
-    """)
-if 'input_expander_state' not in st.session_state:
-    st.session_state['input_expander_state'] = True
-expander = st.expander('Show/Hide Inputs', expanded=st.session_state['input_expander_state'])
-with expander:
+    st.markdown("**1. Model Selection**")
+    st.write("- Choose between two models: GPT-4 and GPT-3.5-Turbo.")
+    st.write("- GPT-4 (Recommended): More intelligent and creative but runs slower.")
+    st.write("- GPT-3.5-Turbo: Faster but less capable than GPT-4.")
+
+    st.markdown("**2. Model Selection**")
+    st.write("- Choose between three token lengths: Short, Medium, and Long.")
+    st.write("- Short: Good for captions and short descriptions.")
+    st.write("- Medium: Good for call-to-action messages and newsletters.")
+    st.write("- Long: Good for longer blog posts and articles, as well as short stories and poems.")
+
+    st.markdown("**3. Input Details**")
+    st.write("- Provide details like your brand, target audience, content type, topic, and writing style.")
+    st.write("- The more accurate your inputs, the better the generated content will align with your expectations.")
+
+    st.markdown("**4. Content Generation**")
+    st.write("- Click the 'Generate Draft' button.")
+    st.write("- The AI will use your inputs to generate a draft. This process may take a few moments, so your patience is appreciated.")
+
+    st.markdown("**5. Review AI Analysis and First Draft**")
+    st.write("- The application will display an AI analysis of your inputs, which gives insights into how the AI perceived your inputs.")
+    st.write("- You'll then see the first draft of the content.")
+
+    st.markdown("**6. AI's Second Round of Analysis**")
+    st.write("- The AI will critically assess the first draft.")
+    st.write("- A second, more refined draft is then presented based on this analysis.")
+
+    st.markdown("**7. Feedback and Revisions**")
+    st.write("- If the content isn't quite right, provide feedback in the designated field.")
+    st.write("- Click 'Send Feedback', and the AI will generate a new version of the content considering your comments.")
+
+    st.markdown("**8. Feedback Thread**")
+    st.write("- This section displays all previous feedback and the AI's corresponding responses.")
+    st.write("- It's a great way to track changes and see the evolution of the content.")
+
+    st.write("With these steps, the Dasho Draft Generator ensures that you receive quality written content, tailored to your specific requirements.")
+
+expander_inputs = st.expander('Inputs', expanded=True)
+with expander_inputs:
     model_options = ['gpt-4', 'gpt-3.5-turbo']
     selected_model = st.selectbox('Select Model:', model_options)
-
+    token_length_options = {
+    'Short': 150,
+    'Medium': 550,
+    'Long': 1022
+    }
+    selected_token_length = st.selectbox('Token Length:', list(token_length_options.keys()))
     st.markdown("---")
 
     # Initialize state variables
@@ -79,21 +124,21 @@ with expander:
     if 'show_output' not in st.session_state:
         st.session_state['show_output'] = True
 
-
     brand = st.text_input('Brand:', '')
     brand_description = st.text_input('Brand Description:', '')
-    content_type_options = ['', 'Article', 'Blog Post', 'Email Newsletter', 'Newsletter', 'Infographics', 'Short Story', 'Press Release', 'Product Description', 'Product Review', 'Social Media Captions', 'Twitter Captions', 'Advertisement', 'Shortform Video Script', 'SEO-Optimized Article', 'Social Media Post']
+    content_type_options = ['', 'Article', 'Blog Post', 'Email Newsletter', 'Newsletter', 'Infographics', 'Short Story', 'Poem', 'Press Release', 'Product Description', 'Product Review', 'Social Media Captions', 'Twitter Captions', 'Advertisement', 'Shortform Video Script', 'SEO-Optimized Article', 'Social Media Post']
     content_type = st.selectbox('Content Type:', sorted(content_type_options))
     topic = st.text_input('Topic:', '')
     writing_style = st.text_input('Writing Style:', '')
     target_audience = st.text_input('Target Audience:', '')
     additional_instructions = st.text_area('Additional Information (Optional):', '')
 
+
 if brand and brand_description and content_type and topic and writing_style and target_audience and st.button('Generate Draft'):
     st.markdown("---")
     if not st.session_state['article_gen']:
-        # Initialize the ArticleGenerator object
-        st.session_state['article_gen'] = ArticleGenerator(selected_model, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions)
+        # Initialize the ArticleGenerator object with the selected token length
+        st.session_state['article_gen'] = ArticleGenerator(selected_model, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions, token_length_options[selected_token_length])
     container = st.empty()  # Use empty to be able to continually update the output
     st_callback = StreamlitCallbackHandler(container)  # Initialize the Streamlit callback handler
     response = st.session_state['article_gen'].generate(st_callback)  # Pass the callback handler to the generate method
@@ -160,3 +205,4 @@ if st.session_state['feedbacks']:
             st.write(f"Output: {output}")
         
         st.markdown("---")
+st.caption("© 2023 DashoContent. All rights reserved.")

@@ -16,8 +16,8 @@ openapi_key = os.getenv("OPENAPI_KEY")
 os.environ['OPENAI_API_KEY'] = openapi_key
 
 class ArticleGenerator:
-    def __init__(self, model_name, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions):
-        self.llm = ChatOpenAI(temperature=0.8, max_tokens=822, model_name=model_name, streaming=True)
+    def __init__(self, model_name, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions, max_tokens=822):
+        self.llm = ChatOpenAI(temperature=0.8, max_tokens=max_tokens, model_name=model_name, streaming=True)
         self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description
@@ -39,8 +39,8 @@ class ArticleGenerator:
         )
 
         prompt_template_2 = PromptTemplate(
-            input_variables=['AI_analysis', 'content_type', 'brand', 'target_audience'],
-            template="Instructions: {AI_analysis}\nBased on the instructions, create a {content_type} for {brand}. Target Audience: {target_audience}\nOutput:"
+            input_variables=['AI_analysis', 'content_type', 'brand', 'target_audience', 'writing_style'],
+            template="Instructions: {AI_analysis}\nBased on the instructions, create a {content_type} for {brand}. Target Audience: {target_audience}\nThe writing style must be {writing_style} as well as humanlike.\nOutput:"
         )
 
         prompt_template_3 = PromptTemplate(
@@ -55,7 +55,7 @@ class ArticleGenerator:
 
         prompt_template_5 = PromptTemplate(
             input_variables=['content_type', 'brand', 'user_feedback', 'final_output'],
-            template="Latest draft you made of {brand}'s {content_type}: {final_output}\nThis draft of had the following user feedback: {user_feedback}\nYour response to the feedback:"
+            template="Latest draft you made of {brand}'s {content_type}: {final_output}\nThis draft has the following user comment: {user_feedback}\nYour response to the comment:"
         )
         chain_1 = LLMChain(llm=self.llm, prompt=prompt_template_1, output_key="AI_analysis")
         chain_2 = LLMChain(llm=self.llm, prompt=prompt_template_2, output_key="first_draft")
