@@ -68,7 +68,7 @@ with expander_info:
     st.write("- GPT-4 (Recommended): More intelligent and creative but runs slower.")
     st.write("- GPT-3.5-Turbo: Faster but less capable than GPT-4.")
 
-    st.markdown("**2. Model Selection**")
+    st.markdown("**2. Token Length Selection**")
     st.write("- Choose between three token lengths: Short, Medium, and Long.")
     st.write("- Short: Good for captions and short descriptions.")
     st.write("- Medium: Good for call-to-action messages and newsletters.")
