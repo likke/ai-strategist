@@ -15,14 +15,12 @@ openapi_key = os.getenv("OPENAPI_KEY")
 
 os.environ['OPENAI_API_KEY'] = openapi_key
 
-class ArticleGenerator:
-    def __init__(self, model_name, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions, max_tokens=822):
+class StratGenerator:
+    def __init__(self, model_name, brand, brand_description, industry_type, target_audience, additional_instructions, max_tokens=822):
         self.llm = ChatOpenAI(temperature=0.8, max_tokens=max_tokens, model_name=model_name, streaming=True)
-        self.content_type = content_type
         self.brand = brand
         self.brand_description = brand_description
-        self.topic = topic
-        self.writing_style = writing_style
+        self.industry_type = industry_type
         self.target_audience = target_audience
         self.additional_instructions = additional_instructions
 
@@ -34,28 +32,28 @@ class ArticleGenerator:
 
     def setup(self):
         prompt_template_1 = PromptTemplate(
-            input_variables=['content_type', 'brand', 'brand_description', 'topic', 'target_audience','writing_style', 'additional_instructions'],
-            template="Instructions: Create a {content_type} for {brand} in the {writing_style} writing style.\nDescription of {brand}: {brand_description}.\nTarget Audience: {target_audience}\nTopic of the {content_type}: {topic}\n Additional Instructions: {additional_instructions}\nBased on the instructions, I want you to rewrite and summarize it based on how you understood them. Format your analysis like this: \n '- WHAT I UNDERSTOOD' \n '- REASONING' \n '- PLAN' \n After the analysis, reiterate the instructions to yourself. Write your answer in a conversational and instructional way as if you are reiterating the instructions to someone else. YOUR INSTRUCTIONS MUST BE ORGANIZED WITH BULLET POINTS. There must be seven items in your instructions. Separate each instructional item with '|' as a delimiter. THEN, after your analysis, write the requirements for creating a {content_type} for {topic}. \n A guide question you should answer is this: What is the structure of creating the {content_type}? Does it need chapters?\nOutput:"
+            input_variables=['brand', 'brand_description', 'industry_type', 'target_audience', 'additional_instructions'],
+            template="Persona: You are an astute and intelligent group of brand marketers for a Forbes 500 company. \nInstructions: Based on the brand and tagline, description, industry, and target audience, create a brand summary.\nDescription of {brand}: {brand_description}.\nIndustry: {industry_type}\nTarget Audience: {target_audience}\n Additional Instructions: {additional_instructions}\n. Complete the following details for the brand summary and show as result. Be precise based on input but don't change the template: \nTEMPLATE:\nBrand Overview:\nBrand Name:\nBrand Tagline:\nBrand Description:\nBrand Mission/Vision:\nTarget Audience:\nIndustry/Niche:\nKey Competitors:\nPoints of Differentiation:\n(BE SURE TO APPEND '|' as a separator between each of the above fields)\n"
         )
 
         prompt_template_2 = PromptTemplate(
-            input_variables=['AI_analysis', 'content_type', 'brand', 'target_audience', 'writing_style'],
-            template="Instructions: {AI_analysis}\nBased on the instructions, create a {content_type} for {brand}. Target Audience: {target_audience}\nThe writing style must be {writing_style} as well as humanlike.\nOutput:"
+            input_variables=['AI_analysis', 'brand', 'industry_type', 'target_audience'],
+            template="Brand Summary: {AI_analysis}\nBased on the brand summary, create a detailed content analysis for {brand} of Industry: {industry_type} and Target Audience: {target_audience}.\nOutput should be in this template:\nStrengths and Weaknesses:\nMarket Position:\nTop 5 Problems of Brand's Audience:\n:\nGoals of the Content:\nDesired Audience Response:"
         )
 
         prompt_template_3 = PromptTemplate(
-            input_variables=['first_draft', 'content_type', 'brand', 'topic'],
-            template="First Draft: {first_draft}\nMake a short and concise analysis of this first draft of a/an {content_type} for {brand}. Note that the topic of the {content_type} is {topic}. Follow this format for the analysis (append bullet points): \n 'DRAFT SUMMARY:' \n 'CRITICISM AND SUGGESTIONS ON HOW TO MAKE THE CONTENT MORE HUMANLIKE:' \n 'PLAN:' \nOutput:"
+            input_variables=['first_draft', 'brand', 'industry_type', 'target_audience'],
+            template="Strategy Phase 1 of {brand}: {first_draft}\nBased on the analysis, make a unique and creative content plan for {brand} in this industry {industry_type} for the {target_audience} target audience. Follow this template for the analysis.\nTop 5 Content Types to Focus on:\nTop 3 Content Platforms to Focus on:\nSuggested Posting Frequency and Schedules:\nKey Messages to Convey:\n"
         )
 
         prompt_template_4 = PromptTemplate(
-            input_variables=['AI_analysis_2', 'content_type', 'brand', 'first_draft'],
-            template="First Draft of {brand}'s {content_type}: {first_draft} \n Suggestions on how to improve the {content_type}: {AI_analysis_2}\n\n Write the improved, humanlike draft:"
+            input_variables=['AI_analysis_2', 'brand', 'industry_type', 'target_audience', 'first_draft'],
+            template="Strategy Phase 2 of {brand}: {first_draft} \n Based on the content plan at {AI_analysis_2}, make a unique and creative content pillar, content buckets and, initial content titles for {brand} of {industry_type} for {target_audience} as target audience: {AI_analysis_2}\n\n Write in this template:\nTop 5 Content Topics based on Key Messages:\nTop 10 Content Subtopics based on Topics:\nTop 30 Content Titles based on subtopics and content types:\n For the content titles, use this format: content type, suggested platform, execution details. Make each topic and title unique but compelling for the audience based on their top problems:"
         )
 
         prompt_template_5 = PromptTemplate(
-            input_variables=['content_type', 'brand', 'user_feedback', 'final_output'],
-            template="Latest draft you made of {brand}'s {content_type}: {final_output}\nThis draft has the following user comment: {user_feedback}\nYour response to the comment:"
+            input_variables=['brand', 'industry_type', 'target_audience', 'user_feedback', 'final_output'],
+            template="Latest strat draft you made of {brand} of {industry_type} for {target_audience} as target audience: {final_output}\nThis draft has the following user comment: {user_feedback}\nYour response to the comment:"
         )
         chain_1 = LLMChain(llm=self.llm, prompt=prompt_template_1, output_key="AI_analysis")
         chain_2 = LLMChain(llm=self.llm, prompt=prompt_template_2, output_key="first_draft")
@@ -65,7 +63,7 @@ class ArticleGenerator:
 
         self.sequential_chain = SequentialChain(
             chains=[chain_1, chain_2, chain_3, chain_4],
-            input_variables=['content_type', 'brand', 'brand_description', 'topic', 'writing_style', 'target_audience', 'additional_instructions'],
+            input_variables=['brand', 'brand_description', 'industry_type', 'target_audience', 'additional_instructions'],
             output_variables=['AI_analysis', 'first_draft', 'AI_analysis_2', 'final_output']
         )
 
@@ -73,11 +71,9 @@ class ArticleGenerator:
         self.llm.callbacks = [st_callback]  # Set the callback handler
 
         input_data = {
-            'content_type': self.content_type,
             'brand': self.brand,
             'brand_description': self.brand_description,
-            'topic': self.topic,
-            'writing_style': self.writing_style,
+            'industry_type': self.industry_type,
             'target_audience': self.target_audience,
             'additional_instructions': self.additional_instructions
         }
@@ -90,11 +86,9 @@ class ArticleGenerator:
     def generate_with_feedback(self, user_feedback, st_callback):  # Add the callback handler as a parameter
         self.llm.callbacks = [st_callback]  # Set the callback handler
         input_data = {
-            'content_type': self.content_type,
             'brand': self.brand,
             'brand_description': self.brand_description,
-            'topic': self.topic,
-            'writing_style': self.writing_style,
+            'industry_type': self.industry_type,
             'target_audience': self.target_audience,
             'additional_instructions': self.additional_instructions,
             'user_feedback': user_feedback,

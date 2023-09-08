@@ -1,11 +1,12 @@
 import streamlit as st
-from langchain_helper import ArticleGenerator
+from langchain_helper import StratGenerator
 from langchain.callbacks import StreamlitCallbackHandler
 
-# Set page config
-st.set_page_config(page_title='Dasho Article Generation', page_icon=':pencil:', layout='centered', initial_sidebar_state='collapsed')
+# Set up Streamlit page settings
+st.set_page_config(page_title='Dasho Content Co-strategist', page_icon=':pencil:', layout='centered', initial_sidebar_state='collapsed')
 
-# Define custom colors for layout
+# Define custom colors and styles
+# These will be used for customizing the CSS later
 primaryColor = "#4E89AE"
 startGradientColor = "#ffaa00"
 endGradientColor = "#FFFFFF"
@@ -14,6 +15,7 @@ font = "Roboto, sans-serif"
 secondaryBackgroundColor = "#fcdede"
 buttonColor = "#ffaa00"
 
+# Custom CSS for styling the Streamlit app
 custom_css = f"""
 <style>
     body {{
@@ -54,14 +56,19 @@ custom_css = f"""
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
-st.title("Dasho Draft Generator")
+
+# Add a title to the Streamlit app
+st.title("Dasho Content Co-strategist")
+
+# Add a blank line
 st.text("")
 
+# Create a collapsible section (expander) to describe how the app works
 expander_info = st.expander('How Does This Work?', expanded=False)
 with expander_info:
-    st.write("### **How the Dasho Draft Generator Works**")
+    st.write("### **How the Dasho Content Co-strategist Works**")
     
-    st.write("The Dasho Draft Generator is a powerful tool that harnesses the capabilities of AI to craft written content tailored to your needs. Below is an overview of how the application operates:")
+    st.write("The Dasho Content Co-strategist is a powerful tool that harnesses the capabilities of AI to summarize your brand and create a content strategy in preparation for production. Below is an overview of how the application operates:")
 
     st.markdown("**1. Model Selection**")
     st.write("- Choose between two models: GPT-4 and GPT-3.5-Turbo.")
@@ -75,46 +82,49 @@ with expander_info:
     st.write("- Long: Good for longer blog posts and articles, as well as short stories and poems.")
 
     st.markdown("**3. Input Details**")
-    st.write("- Provide details like your brand, target audience, content type, topic, and writing style.")
-    st.write("- The more accurate your inputs, the better the generated content will align with your expectations.")
+    st.write("- Provide details like your brand, brand description, industry, and target audience.")
+    st.write("- The more accurate your inputs, the better the generated strategy will align with your expectations.")
 
-    st.markdown("**4. Content Generation**")
-    st.write("- Click the 'Generate Draft' button.")
-    st.write("- The AI will use your inputs to generate a draft. This process may take a few moments, so your patience is appreciated.")
+    st.markdown("**4. Strat Generation**")
+    st.write("- Click the 'Generate Strat' button.")
+    st.write("- The AI will use your inputs to generate a strat. This process may take a few moments, so your patience is appreciated.")
 
-    st.markdown("**5. Review AI Analysis and First Draft**")
+    st.markdown("**5. Review AI Analysis and First Strat**")
     st.write("- The application will display an AI analysis of your inputs, which gives insights into how the AI perceived your inputs.")
-    st.write("- You'll then see the first draft of the content.")
+    st.write("- You'll then see the first iteration of the strat of the brand.")
 
     st.markdown("**6. AI's Second Round of Analysis**")
-    st.write("- The AI will critically assess the first draft.")
-    st.write("- A second, more refined draft is then presented based on this analysis.")
+    st.write("- The AI will critically assess the first strat.")
+    st.write("- A second, more refined strat is then presented based on this analysis.")
 
     st.markdown("**7. Feedback and Revisions**")
-    st.write("- If the content isn't quite right, provide feedback in the designated field.")
-    st.write("- Click 'Send Feedback', and the AI will generate a new version of the content considering your comments.")
+    st.write("- If the strat isn't quite right, provide feedback in the designated field.")
+    st.write("- Click 'Send Feedback', and the AI will generate a new version of the strat considering your comments.")
 
     st.markdown("**8. Feedback Thread**")
     st.write("- This section displays all previous feedback and the AI's corresponding responses.")
-    st.write("- It's a great way to track changes and see the evolution of the content.")
+    st.write("- It's a great way to track changes and see the evolution of the strat.")
 
-    st.write("With these steps, the Dasho Draft Generator ensures that you receive quality written content, tailored to your specific requirements.")
+    st.write("With these steps, the Dasho Content Co-strategist ensures that you receive quality strategy for your content team to tailor-fit for your brand.")
 
+
+# Create another collapsible section for user input
 expander_inputs = st.expander('Inputs', expanded=True)
 with expander_inputs:
-    model_options = ['gpt-4', 'gpt-3.5-turbo']
+    # Create selection boxes for model and token length
+    model_options = ['gpt-3.5-turbo', 'gpt-4']
     selected_model = st.selectbox('Select Model:', model_options)
     token_length_options = {
-    'Short': 150,
+    'Long': 1022,
     'Medium': 550,
-    'Long': 1022
+    'Short': 150
     }
     selected_token_length = st.selectbox('Token Length:', list(token_length_options.keys()))
     st.markdown("---")
 
     # Initialize state variables
-    if 'article_gen' not in st.session_state:
-        st.session_state['article_gen'] = None
+    if 'strat_gen' not in st.session_state:
+        st.session_state['strat_gen'] = None
     if 'feedbacks' not in st.session_state:
         st.session_state['feedbacks'] = []
     if 'outputs' not in st.session_state:
@@ -126,51 +136,98 @@ with expander_inputs:
 
     brand = st.text_input('Brand:', '')
     brand_description = st.text_input('Brand Description:', '')
-    content_type_options = ['', 'Article', 'Blog Post', 'Email Newsletter', 'Newsletter', 'Infographics', 'Short Story', 'Poem', 'Press Release', 'Product Description', 'Product Review', 'Social Media Captions', 'Twitter Captions', 'Advertisement', 'Shortform Video Script', 'SEO-Optimized Article', 'Social Media Post']
-    content_type = st.selectbox('Content Type:', sorted(content_type_options))
-    topic = st.text_input('Topic:', '')
-    writing_style = st.text_input('Writing Style:', '')
-    target_audience = st.text_input('Target Audience:', '')
+
+    industry_type_options = [
+        '',
+        'Agriculture and Farming',
+        'Automotive and Transportation',
+        'Banking and Finance',
+        'Construction and Real Estate',
+        'Education and Training',
+        'Energy and Utilities',
+        'Entertainment and Media',
+        'Food and Beverage',
+        'Healthcare and Medical',
+        'Hospitality and Tourism',
+        'Information Technology (IT) and Software',
+        'Manufacturing and Production',
+        'Nonprofit and Social Services',
+        'Retail and Consumer Goods',
+        'Telecommunications',
+        'Professional Services',
+        'Government and Public Administration',
+        'Legal Services',
+        'Environmental Services',
+        'E-commerce and Online Retail',
+        'Aerospace and Defense',
+        'Pharmaceuticals and Biotechnology',
+        'Sports and Recreation',
+        'Arts and Culture',
+        'Insurance',
+        'Marketing and Advertising',
+        'Wholesale and Distribution',
+        'Transportation and Logistics',
+        'Research and Development',
+        'Architecture and Design'
+    ]
+    industry_type = st.selectbox('Industry:', sorted(industry_type_options))
+ 
+    target_audience_options = [
+        '',
+        'Millennials (Generation Y)',
+        'Gen Z (Generation Z)',
+        'Baby Boomers',
+        'Working Professionals',
+        'Parents and Families',
+        'Students and Academics',
+        'Small Business Owners',
+        'Entrepreneurs and Startups',
+        'Tech Enthusiasts',
+        'Health and Fitness Enthusiasts'
+    ]
+    target_audience = st.selectbox('Target Audience:',  sorted(target_audience_options))
     additional_instructions = st.text_area('Additional Information (Optional):', '')
 
 
-if brand and brand_description and content_type and topic and writing_style and target_audience and st.button('Generate Draft'):
+# Check if all required fields are filled and the Generate Strat button is clicked
+if brand and brand_description and industry_type and target_audience and st.button('Generate Strat'):
     st.markdown("---")
-    if not st.session_state['article_gen']:
-        # Initialize the ArticleGenerator object with the selected token length
-        st.session_state['article_gen'] = ArticleGenerator(selected_model, content_type, brand, brand_description, topic, writing_style, target_audience, additional_instructions, token_length_options[selected_token_length])
+    if not st.session_state['strat_gen']:
+        # Initialize the StratGenerator object with the selected token length
+        st.session_state['strat_gen'] = StratGenerator(selected_model, brand, brand_description, industry_type, target_audience, additional_instructions, token_length_options[selected_token_length])
     container = st.empty()  # Use empty to be able to continually update the output
     st_callback = StreamlitCallbackHandler(container)  # Initialize the Streamlit callback handler
-    response = st.session_state['article_gen'].generate(st_callback)  # Pass the callback handler to the generate method
+    response = st.session_state['strat_gen'].generate(st_callback)  # Pass the callback handler to the generate method
     st.session_state['output_generated'] = True
     st.session_state['current_response'] = response
     container.write("")  # Clears the container after use
 
+# Create an optional collapsible section to display output
 output_expander = st.expander("Show/Hide Output", expanded=True)
-
 with output_expander:
     if st.session_state['output_generated']:
         response = st.session_state.get('current_response', {})
         st.header("FINAL OUTPUT")
 
-        # Display AI Analysis
-        st.subheader("AI Analysis")
+        # Display Brand Summary
+        st.subheader("AI Brand Summary")
         st.write(response['AI_analysis'].strip())
 
-        # Display First Draft
-        st.subheader("First Draft")
+        # Display Brand Strategy
+        st.subheader("Content Strategy")
         st.write(response['first_draft'].strip())
 
-        # Display Second AI Analysis
-        st.subheader("AI Analysis of First Draft")
-        article_text = response['AI_analysis_2'].strip().split("|")
-        for section in article_text:
+        # Display Content Topics or Content Pillars
+        st.subheader("Content Plan")
+        strat_text = response['AI_analysis_2'].strip().split("|")
+        for section in strat_text:
             st.write(" ", section)
 
-        # Display Second Draft
-        st.subheader("Second Draft")
+        # Display Content Subtopoics or Content Buckets
+        st.subheader("Content Execution")
         st.write(response['final_output'].strip())
     
+# Check if feedback has been provided by the user
 if st.session_state['output_generated']:
     st.markdown("---")
     if 'user_feedback' not in st.session_state:
@@ -181,7 +238,7 @@ if st.session_state['output_generated']:
     if st.button('Send Feedback') and user_feedback:
         # Initialize the Streamlit callback handler and generate the output
         st_callback = StreamlitCallbackHandler(st.empty())  # Initialize the Streamlit callback handler
-        new_response = st.session_state['article_gen'].generate_with_feedback(user_feedback, st_callback)  # Pass the callback handler to the generate_with_feedback method
+        new_response = st.session_state['strat_gen'].generate_with_feedback(user_feedback, st_callback)  # Pass the callback handler to the generate_with_feedback method
 
         # Update session state with the new feedback and output
         st.session_state['feedbacks'].append(user_feedback)
@@ -205,4 +262,7 @@ if st.session_state['feedbacks']:
             st.write(f"Output: {output}")
         
         st.markdown("---")
+
+# Add copyright notice and support email at the bottom
 st.caption("© 2023 DashoContent. All rights reserved.")
+st.caption("Email for support or feedback: info@contentdash.app")
